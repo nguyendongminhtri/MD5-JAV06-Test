@@ -10,6 +10,7 @@ import com.example.demo.model.RoleName;
 import com.example.demo.model.User;
 import com.example.demo.security.jwt.JwtProvider;
 import com.example.demo.security.jwt.JwtTokenFilter;
+import com.example.demo.security.userprincal.UserDetailService;
 import com.example.demo.security.userprincal.UserPrinciple;
 import com.example.demo.service.impl.RoleServiceImpl;
 import com.example.demo.service.impl.UserServiceImpl;
@@ -26,7 +27,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -44,7 +47,8 @@ public class AuthController {
     JwtProvider jwtProvider;
     @Autowired
     JwtTokenFilter jwtTokenFilter;
-
+    @Autowired
+    UserDetailService userDetailService;
     @PostMapping("/signup")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpForm signUpForm) {
         if (userService.existsByUsername(signUpForm.getUsername())) {
@@ -109,5 +113,24 @@ public class AuthController {
         } catch (UsernameNotFoundException exception) {
             return new ResponseEntity<>(new ResponMessage(exception.getMessage()), HttpStatus.NOT_FOUND);
         }
+    }
+    @GetMapping("/check/role")
+    public ResponseEntity<?> checkRole(){
+        User user = userDetailService.getCurrentUser();
+        Set<Role> roles = user.getRoles();
+        List<Role> roles1 = new ArrayList<>(roles);
+        System.out.println("Check ---> "+(roles1.get(0).getName().equals(RoleName.ADMIN)));
+        for (int i = 0; i < roles1.size(); i++) {
+            if(roles1.get(i).getName().equals(RoleName.ADMIN)){
+                return new ResponseEntity<>(new ResponMessage("admin"), HttpStatus.OK);
+            }
+            if(roles1.get(i).getName().equals(RoleName.USER)){
+                return new ResponseEntity<>(new ResponMessage("user"), HttpStatus.OK);
+            }
+            if(roles1.get(i).getName().equals(RoleName.PM)){
+                return new ResponseEntity<>(new ResponMessage("pm"), HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>(new ResponMessage("Not Found"), HttpStatus.OK);
     }
 }
